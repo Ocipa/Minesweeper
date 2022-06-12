@@ -1,0 +1,52 @@
+{
+  "name": "Minesweeper",
+  "tree": {
+    "$className": "DataModel",
+
+    "Players": {
+      "$className": "Players",
+
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
+    },
+
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+
+        "$path": "src",
+
+        "RevealEvent": {
+          "$className": "BindableEvent"
+        },
+
+        "SettingsChangeEvent": {
+          "$className": "BindableEvent"
+        },
+
+        "FlagEvent": {
+          "$className": "BindableEvent"
+        },
+
+        "PromptEvent": {
+          "$className": "BindableEvent"
+        },
+
+        "RetryEvent": {
+          "$className": "BindableEvent"
+        }
+      }
+    },
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+
+      "Packages": {
+        "$path": "Packages"
+      }
+    }
+  }
+}
