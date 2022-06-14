@@ -3,8 +3,7 @@ local MessagingService = game:GetService("MessagingService")
 local UserInputService = game:GetService("UserInputService")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-
-local PromptEvent = script.Parent.Parent.Parent.Parent:WaitForChild("PromptEvent")
+local Accord = require(ReplicatedStorage.Packages.accord)
 
 return function ()
     local Mouse = UserInputService.MouseEnabled
@@ -84,7 +83,7 @@ return function ()
             ZIndex = 2,
 
             [Roact.Event.Activated] = function()
-                PromptEvent:Fire(false)
+                Accord.Prompt:None()
             end
 
         }, {

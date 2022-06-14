@@ -1,9 +1,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-local Types = require(script.Parent.Parent.Parent:WaitForChild("Types"))
+local Accord = require(ReplicatedStorage.Packages.accord)
 
-local PromptEvent = script.Parent.Parent.Parent:WaitForChild("PromptEvent")
+local Types = require(script.Parent.Parent.Parent:WaitForChild("Types"))
 
 local Prompt = Roact.Component:extend("Prompt")
 
@@ -21,8 +21,10 @@ function Prompt:render()
         ZIndex = 2,
 
         [Roact.Event.Activated] = function()
-            if self.props.PromptName == "Help" or self.props.PromptName == "Retry" then
-                PromptEvent:Fire(false)
+            Accord.Prompt:None()
+
+            if self.props.PromptName == "Win" or self.props.PromptName == "Loss" then
+                Accord.Grid:Generate()
             end
         end
 

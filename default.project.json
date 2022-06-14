@@ -17,27 +17,7 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
 
-        "$path": "src",
-
-        "RevealEvent": {
-          "$className": "BindableEvent"
-        },
-
-        "SettingsChangeEvent": {
-          "$className": "BindableEvent"
-        },
-
-        "FlagEvent": {
-          "$className": "BindableEvent"
-        },
-
-        "PromptEvent": {
-          "$className": "BindableEvent"
-        },
-
-        "RetryEvent": {
-          "$className": "BindableEvent"
-        }
+        "$path": "src"
       }
     },
 

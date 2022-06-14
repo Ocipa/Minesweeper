@@ -9,6 +9,9 @@ local Player = Players.LocalPlayer
 local PlayerGui = Player:FindFirstChild("PlayerGui")
 
 
+require(script.States)
+
+
 local App = Roact.createElement("ScreenGui", {
     IgnoreGuiInset = true
 }, {

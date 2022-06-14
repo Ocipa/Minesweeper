@@ -1,8 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-
-local RetryEvent = script.Parent.Parent.Parent.Parent:WaitForChild("RetryEvent")
+local Accord = require(ReplicatedStorage.Packages.accord)
 
 return function ()
     return {
@@ -50,7 +49,8 @@ return function ()
             ZIndex = 2,
 
             [Roact.Event.Activated] = function()
-                RetryEvent:Fire()
+                Accord.Prompt:None()
+                Accord.Grid:Generate()
             end
 
         }, {

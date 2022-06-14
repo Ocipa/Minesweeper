@@ -3,145 +3,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
+local Accord = require(ReplicatedStorage.Packages.accord)
+
 local Types = require(script.Parent.Parent:WaitForChild("Types"))
-
-local RevealEvent = script.Parent.Parent:WaitForChild("RevealEvent")
-local FlagEvent = script.Parent.Parent:WaitForChild("FlagEvent")
-local SettingsChangeEvent = script.Parent.Parent:WaitForChild("SettingsChangeEvent")
-local PromptEvent = script.Parent.Parent:WaitForChild("PromptEvent")
-local RetryEvent = script.Parent.Parent:WaitForChild("RetryEvent")
-
-local Camera = workspace.CurrentCamera
 
 local Board = Roact.Component:extend("Board")
 
 function Board:init(Props)
-    self:setState({
-        Size = 10,
-
-        Mines = 12,
-
-        Grid = {},
-
-        Prompt = false
-    })
-
-    self.RevealedNumbers = 0
-    self.FlaggedMines = 0
-
-    self:GenerateGrid()
-end
-
-function Board:GenerateGrid(Seed: number?)
-    self.RevealedNumbers = 0
-    local Random = if Seed then Random.new(Seed) else Random.new()
-
-    local NewGrid: Types.Grid = {}
-
-    for Y=1, self.state.Size do
-        NewGrid[Y] = {}
-
-        for X=1, self.state.Size do
-            NewGrid[Y][X] = {Revealed = false, Value = 0}
-        end
-    end
-
-    local Mines = self.state.Mines
-
-    while Mines > 0 do
-        local X = Random:NextInteger(1, self.state.Size)
-        local Y = Random:NextInteger(1, self.state.Size)
-
-        if NewGrid[Y][X].Value ~= "Mine" then
-            NewGrid[Y][X].Value = "Mine"
-            Mines -= 1
-
-        else
-            continue
-        end
-
-        for Y2=-1, 1 do
-            for X2=-1, 1 do
-                local InX = X - X2 >= 1 and X - X2 <= self.state.Size
-                local InY = Y - Y2 >= 1 and Y - Y2 <= self.state.Size
-
-                if InX and InY then
-                    local Value = NewGrid[Y - Y2][X - X2].Value
-
-                    if typeof(Value) == "number" then
-                        NewGrid[Y - Y2][X - X2].Value += 1
-                    end
-                end
-            end
-        end
-    end
+    Accord.Grid:Generate()
 
     self:setState({
-        Grid = NewGrid
-    })
-end
-
-function Board:Reveal(X: number, Y: number, Grid)
-    if not X and Y then
-        return Grid
-    end
-
-    local TempGrid: Types.Grid = Grid or self.state.Grid
-
-    if not TempGrid[Y] or not TempGrid[Y][X] or TempGrid[Y][X].Revealed or TempGrid[Y][X].Flagged then
-        return Grid
-    end
-
-    TempGrid[Y][X].Revealed = true
-
-    if TempGrid[Y][X].Value ~= "Mine" then
-        self.RevealedNumbers += 1
-    end
-    local Prompt = if math.pow(self.state.Size, 2) == self.RevealedNumbers + self.state.Mines then "Win" else false
-
-    if TempGrid[Y][X].Value == 0 then
-        for Y2=-1, 1 do
-            for X2=-1, 1 do
-                TempGrid = self:Reveal(X + X2, Y + Y2, TempGrid) or TempGrid
-            end
-        end
-    end
-
-    if not Grid then
-        self:setState({
-            Grid = TempGrid,
-            Prompt = Prompt or if TempGrid[Y][X].Value == "Mine" then "Loss" else self.state.Prompt
-        })
-
-    elseif Prompt then
-        self:setState({
-            Prompt = Prompt
-        })
-
-    else
-        return TempGrid
-    end
-end
-
-function Board:Flag(X: number, Y: number)
-    if not X and Y then
-        return
-    end
-
-    local Grid: Types.Grid = self.state.Grid
-
-    if not Grid[Y] or not Grid[Y][X] or Grid[Y][X].Revealed then
-        return
-    end
-
-    Grid[Y][X].Flagged = not Grid[Y][X].Flagged
-
-    if Grid[Y][X].Value == "Mine" then
-        self.FlaggedMines += if Grid[Y][X].Flagged then 1 else -1
-    end
-
-    self:setState({
-        Grid = Grid
+        Size = Accord.Size:GetValue(),
+        Mines = Accord.Mines:GetValue(),
+        Grid = Accord.Grid:GetValue(),
+        Prompt = Accord.Prompt:GetValue()
     })
 end
 
@@ -192,58 +67,55 @@ function Board:render()
 end
 
 function Board:didMount()
-    self.RevealEvent = RevealEvent.Event:Connect(function(X, Y)
-        self:Reveal(X, Y)
-    end)
-
-    self.FlagEvent = FlagEvent.Event:Connect(function(X, Y)
-        self:Flag(X, Y)
-    end)
-
-    self.SettingsChangeEvent = SettingsChangeEvent.Event:Connect(function(SettingsName: string, SettingsValue: any)
-        self.state[SettingsName] = SettingsValue
-
-        if math.pow(self.state.Size, 2) <= self.state.Mines then
-            SettingsChangeEvent:Fire("Mines", math.pow(self.state.Size, 2) - 1)
-
-            return
-        end
-
-        self:GenerateGrid()
-    end)
-
-    self.PromptEvent = PromptEvent.Event:Connect(function(PromptName: string)
-        if self.state.Prompt ~= "Win" and self.state.Prompt ~= "Loss" then
-            self:setState({
-                Prompt = if self.state.Prompt ~= PromptName then PromptName else false
-            })
-        end
-    end)
-
-    self.RetryEvent = RetryEvent.Event:Connect(function()
-        self:GenerateGrid()
+    self.SizeChangeEvent = Accord.Size:Connect(function(value, lastValue)
+        Accord.Grid:Generate()
 
         self:setState({
-            Prompt = false
+            Size = value
+        })
+    end)
+
+    self.MinesChangeEvent = Accord.Mines:Connect(function(value, lastValue)
+        Accord.Grid:Generate()
+
+        self:setState({
+            Mines = value
+        })
+    end)
+
+    self.GridChangeEvent = Accord.Grid:Connect(function(value, lastValue)
+        self:setState({
+            Grid = value
+        })
+    end)
+
+    self.PromptChangedEvent = Accord.Prompt:Connect(function(value, lastValue)
+        self:setState({
+            Prompt = value
         })
     end)
 end
 
 function Board:willUnmount()
-    if self.RevealEvent and typeof(self.RevealEvent) == "RBXScriptConnection" then
-        self.RevealEvent:Disconnect()
+    if typeof(self.SizeChangeEvent) == "table" and self.SizeChangeEvent["Connected"] then
+        self.SizeChangeEvent:Disconnect()
     end
-    self.RevealEvent = nil
+    self.SizeChangeEvent = nil
 
-    if self.FlagEvent and typeof(self.FlagEvent) == "RBXScriptConnection" then
-        self.FlagEvent:Disconnect()
+    if typeof(self.MinesChangeEvent) == "table" and self.MinesChangeEvent["Connected"] then
+        self.MinesChangeEvent:Disconnect()
     end
-    self.FlagEvent = nil
+    self.MinesChangeEvent = nil
 
-    if self.SettingsChangeEvent and typeof(self.SettingsChangeEvent) == "RBXScriptConnection" then
-        self.SettingsChangeEvent:Disconnect()
+    if typeof(self.GridChangeEvent) == "table" and self.GridChangeEvent["Connected"] then
+        self.GridChangeEvent:Disconnect()
     end
-    self.SettingsChangeEvent = nil
+    self.GridChangeEvent = nil
+
+    if typeof(self.PromptChangedEvent) == "table" and self.PromptChangedEvent["Connected"] then
+        self.PromptChangedEvent:Disconnect()
+    end
+    self.PromptChangedEvent = nil
 end
 
 return Board

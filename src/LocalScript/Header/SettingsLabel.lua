@@ -3,13 +3,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-
-local SettingsChangeEvent = script.Parent.Parent.Parent:WaitForChild("SettingsChangeEvent")
+local Accord = require(ReplicatedStorage.Packages.accord)
 
 local Setting = Roact.Component:extend("Setting")
 
 function Setting:init(Props)
     self:setState(Props)
+
+    self.TextBoxRef = Roact.createRef()
 end
 
 function Setting:render()
@@ -38,23 +39,24 @@ function Setting:render()
             BackgroundColor3 = Color3.fromRGB(220, 220, 220),
             ClearTextOnFocus = false,
             Font = Enum.Font.SourceSansBold,
+
+            [Roact.Ref] = self.TextBoxRef,
     
             [Roact.Change.Text] = function(TextBox: TextBox)
-                local ToNumber = tonumber(TextBox.Text)
+                local number = tonumber(TextBox.Text)
 
-                local ClampedNumber = math.clamp(ToNumber or self.state.Min, self.state.Min, self.state.Max)
-
-                if ToNumber == ClampedNumber then
-                    SettingsChangeEvent:Fire(self.state.Name, ClampedNumber)
-                end
+                Accord[self.state.Name]:Set(number or 0)
             end,
     
             [Roact.Event.FocusLost] = function(TextBox: TextBox)
-                local ToNumber = tonumber(TextBox.Text)
+                TextBox.Text = Accord[self.state.Name]:GetValue()
+            end,
 
-                local ClampedNumber = math.clamp(ToNumber or self.state.Min, self.state.Min, self.state.Max)
-
-                SettingsChangeEvent:Fire(self.state.Name, ClampedNumber)
+            [Roact.Event.Focused] = function(TextBox: TextBox)
+                local Prompt = Accord.Prompt:GetValue()
+                if Prompt == "Win" or Prompt == "Loss" then
+                    TextBox:ReleaseFocus()
+                end
             end
         }, {
             Roact.createElement("UICorner", {
@@ -72,20 +74,23 @@ function Setting:render()
 end
 
 function Setting:didMount()
-    self.SettingsChangeEvent = SettingsChangeEvent.Event:Connect(function(SettingsName: string, SettingsValue: any)
-        if self.state.Name == SettingsName and self.state.Current ~= SettingsValue then
+    self.SettingChangedEvent = Accord[self.state.Name]:Connect(function(value, lastValue)
+        local TextBox = self.TextBoxRef:getValue()
+
+        if not TextBox:IsFocused() then
+            TextBox.Text = value
             self:setState({
-                Current = SettingsValue
+                Current = value
             })
         end
     end)
 end
 
 function Setting:willUnmount()
-    if self.SettingsChangeEvent and typeof(self.SettingsChangeEvent) == "RBXScriptConnection" then
-        self.SettingsChangeEvent:Disconnect()
+    if typeof(self.SettingChangedEvent) == "table" and self.SettingChangedEvent["Connected"] then
+        self.SettingChangedEvent:Disconnect()
     end
-    self.SettingsChangeEvent = nil
+    self.SettingChangedEvent = nil
 end
 
 

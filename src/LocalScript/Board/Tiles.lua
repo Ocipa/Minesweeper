@@ -4,10 +4,9 @@ local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-local Types = require(script.Parent.Parent.Parent:WaitForChild("Types"))
+local Accord = require(ReplicatedStorage.Packages.accord)
 
-local RevealEvent = script.Parent.Parent.Parent:WaitForChild("RevealEvent")
-local FlagEvent = script.Parent.Parent.Parent:WaitForChild("FlagEvent")
+local Types = require(script.Parent.Parent.Parent:WaitForChild("Types"))
 
 local NumberColors = {
     [1] = Color3.fromRGB(0, 0, 255),
@@ -55,11 +54,11 @@ return function(Grid: Types.Grid)
                 BorderSizePixel = 0,
 
                 [Roact.Event.Activated] = if not Revealed and not Flagged then function()
-                    RevealEvent:Fire(X, Y)
+                    Accord.Grid:Reveal(X, Y)
                 end else nil,
 
                 [Roact.Event.MouseButton2Click] = if not Revealed then function()
-                    FlagEvent:Fire(X, Y)
+                    Accord.Grid:Flag(X, Y)
                 end else nil
 
             }, {

@@ -4,15 +4,13 @@ local TextService = game:GetService("TextService")
 local Players = game:GetService("Players")
 
 local Roact = require(ReplicatedStorage.Packages.roact)
-
-local PrompEvent = script.Parent.Parent:WaitForChild("PromptEvent")
-local SettingsChangeEvent = script.Parent.Parent:WaitForChild("SettingsChangeEvent")
+local Accord = require(ReplicatedStorage.Packages.accord)
 
 local Header = Roact.Component:extend("Header")
 
 function Header:init(Props)
     self:setState({
-        Size = 10
+        Size = Accord.Size:GetValue()
     })
 end
 
@@ -53,16 +51,12 @@ function Header:render()
     
             Roact.createElement(require(script.SettingsLabel), {
                 Name = "Size",
-                Current = 10,
-                Min = 3,
-                Max = 99
+                Current = Accord.Size:GetValue()
             }),
     
             Roact.createElement(require(script.SettingsLabel), {
                 Name = "Mines",
-                Current = 12,
-                Min = 1,
-                Max = math.huge
+                Current = Accord.Mines:GetValue()
             })
         }),
 
@@ -76,7 +70,7 @@ function Header:render()
             TextScaled = true,
 
             [Roact.Event.Activated] = function()
-                PrompEvent:Fire("Retry")
+                Accord.Prompt:Retry()
             end
         }),
 
@@ -90,27 +84,25 @@ function Header:render()
             TextScaled = true,
 
             [Roact.Event.Activated] = function()
-                PrompEvent:Fire("Help")
+                Accord.Prompt:Help()
             end
         })
     })
 end
 
 function Header:didMount()
-    self.SettingsChangeEvent = SettingsChangeEvent.Event:Connect(function(SettingsName: string, SettingsValue: any)
-        if SettingsName == "Size" then
-            self:setState({
-                Size = SettingsValue
-            })
-        end
+    self.SizeChangeEvent = Accord.Size:Connect(function(value, lastValue)
+        self:setState({
+            Size = value
+        })
     end)
 end
 
 function Header:willUnmount()
-    if self.SettingsChangeEvent and typeof(self.SettingsChangeEvent) == "RBXScriptConnection" then
-        self.SettingsChangeEvent:Disconnect()
+    if typeof(self.SizeChangeEvent) == "table" and self.SizeChangeEvent["Connected"] then
+        self.SizeChangeEvent:Disconnect()
     end
-    self.SettingsChangeEvent = nil
+    self.SizeChangeEvent = nil
 end
 
 
